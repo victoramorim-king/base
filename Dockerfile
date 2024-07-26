@@ -1,41 +1,50 @@
-# Use the official PHP image as the base image
-FROM php:8.1-fpm
+# Use the official PHP image with Apache and PHP 8.2
+FROM php:8.2-apache
 
-# Set working directory
-WORKDIR /var/www
-
-# Install system dependencies and PHP extensions
-RUN apt-get update \
-    && apt-get install -y \
-    build-essential \
+# Install dependencies and PHP extensions
+RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
-    libfreetype6-dev \
-    locales \
-    zip \
-    git \
-    unzip \
-    curl \
-    libpng-dev \
-    libjpeg-dev \
-    libwebp-dev \
-    libxpm-dev \
     libfreetype6-dev \
     libzip-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install gd pdo_mysql mbstring zip exif pcntl \
+    curl \
+    gnupg \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd pdo pdo_mysql zip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Node.js and npm
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g npm@latest
+
+# Set working directory
+WORKDIR /var/www/html
+
+# Copy application files
+COPY . /var/www/html
+
+# Ensure the correct permissions
+RUN chown -R www-data:www-data /var/www/html
+RUN chmod -R 755 /var/www/html
+
 # Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+RUN curl -sS https://getcomposer.org/installer | php \
+    && mv composer.phar /usr/local/bin/composer
 
-# Copy existing application directory contents
-COPY . /var/www
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader
 
-# Copy existing application directory permissions
-COPY --chown=www-data:www-data . /var/www
+# Install JavaScript dependencies
+RUN npm install
 
-# Expose port 9000 and start php-fpm server
-EXPOSE 9000
-CMD ["php-fpm"]
+# Set Apache configuration
+COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
+
+
+# Expose port 80 for Apache
+EXPOSE 80
+
+# Start Apache
+CMD ["apache2-foreground"]
