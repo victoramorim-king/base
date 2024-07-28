@@ -25,23 +25,25 @@ WORKDIR /var/www/html
 # Copy application files
 COPY . /var/www/html
 
-# Ensure the correct permissions
-RUN chown -R www-data:www-data /var/www/html
-RUN chmod -R 755 /var/www/html
-
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer
 
 # Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-dev --optimize-autoloader --working-dir=/var/www/html
 
 # Install JavaScript dependencies
-RUN npm install
+RUN npm install --prefix /var/www/html
+
+# Ensure the correct permissions
+RUN chown -R www-data:www-data /var/www/html
+RUN chmod -R 755 /var/www/html
 
 # Set Apache configuration
 COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
 
+# Enable Apache modules
+RUN a2enmod rewrite
 
 # Expose port 80 for Apache
 EXPOSE 80
