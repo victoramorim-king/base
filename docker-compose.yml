@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.9'
 
 services:
   laravel-app:
@@ -13,6 +13,15 @@ services:
       - mysql-db
     networks:
       - app-network
+    command: >
+      sh -c "
+        composer install &&
+        npm install --prefix /var/www/html &&
+        npm run build --prefix /var/www/html &&
+        php artisan key:generate &&
+        php artisan migrate &&
+        apache2-foreground
+      "
 
   mysql-db:
     image: mysql:8.0
