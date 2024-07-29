@@ -11,7 +11,7 @@ class PostControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[Test]
     public function a_guest_cannot_access_the_create_post_page()
     {
         $response = $this->get(route('posts.create'));
@@ -19,7 +19,7 @@ class PostControllerTest extends TestCase
         $response->assertRedirect(route('login'));
     }
 
-    /** @test */
+    #[Test]
     public function an_authenticated_user_can_access_the_create_post_page()
     {
         $user = User::factory()->create();
@@ -30,7 +30,7 @@ class PostControllerTest extends TestCase
         $response->assertViewIs('posts.create');
     }
 
-    /** @test */
+    #[Test]
     public function an_authenticated_user_can_create_a_post()
     {
         $user = User::factory()->create();
@@ -46,7 +46,7 @@ class PostControllerTest extends TestCase
         $this->assertDatabaseHas('posts', $postData);
     }
 
-    /** @test */
+    #[Test]
     public function it_shows_all_posts_on_index_page()
     {
         $post = Post::factory()->create();
